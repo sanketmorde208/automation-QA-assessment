@@ -1,0 +1,254 @@
+{
+  "name": "Task2_API_Integration_sanketmorde",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "12754b6f-c0f9-4d44-bda0-342a7958fe24",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/search/repositories?q=language:javascript&sort=stars&order=desc&per_page=10",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "17b2444e-431a-4388-ac41-07ba9cbe661e",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract top 5 repositories\nconst items = $input.all()[0].json.items;\nconst top5 = items.slice(0, 5).map(repo => ({\n  name: repo.name,\n  url: repo.html_url,\n  stars: repo.stargazers_count,\n  description: repo.description,\n  language: repo.language\n}));\n\nreturn [{json: {repos: top5}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        0
+      ],
+      "id": "600a3350-0c29-473b-9ca6-6db86ac69b02",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $node[\"HTTP Request\"].json.items[0].owner.login }}/{{ $node[\"HTTP Request\"].json.items[0].name }}/readme",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3.raw"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        592,
+        0
+      ],
+      "id": "e13578dd-16c1-4ac9-b620-1f0202a71e94",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1613ade0-7c06-4e19-b198-9e0fd3945a95",
+              "leftValue": "={{ $node[\"HTTP Request\"].json.items[0].stargazers_count }}",
+              "rightValue": 1000,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        16
+      ],
+      "id": "b4cf9139-d7fe-4b18-acdd-357d47e83fcd",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1508698744307187862",
+          "mode": "list",
+          "cachedResultName": "sanket morde's server",
+          "cachedResultUrl": "https://discord.com/channels/1508698744307187862"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1508698746005885033",
+          "mode": "list",
+          "cachedResultName": "general",
+          "cachedResultUrl": "https://discord.com/channels/1508698744307187862/1508698746005885033"
+        },
+        "content": "=🚀 **Top JavaScript Repository**\n   Name: {{ $node[\"HTTP Request\"].json.items[0].name }}\n   Stars: {{ $node[\"HTTP Request\"].json.items[0].stargazers_count }}\n   URL: {{ $node[\"HTTP Request\"].json.items[0].html_url }}\n   Owner: {{ $node[\"HTTP Request\"].json.items[0].owner.login }}\n   Language: {{ $node[\"HTTP Request\"].json.items[0].language }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -80
+      ],
+      "id": "82af8848-094d-4861-9b54-b6db564e6584",
+      "name": "Send a message",
+      "webhookId": "e64b7347-0935-4954-92de-9e490488b322",
+      "credentials": {
+        "discordBotApi": {
+          "id": "qAJLfFs00N5hK6ET",
+          "name": "Discord Bot account 3"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        352,
+        144
+      ],
+      "id": "f75d7184-a1cb-48cf-857b-21515455ea4d",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        560,
+        144
+      ],
+      "id": "5e87612b-9b67-49ca-850b-e60a22e9bb8e",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "715e42a5-4339-4f02-89c3-3cd8cceb878c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "93204a1b4d3e2a48619f72f66640f114b3ace627b0fbdf8adbf22d3588d30f25"
+  },
+  "id": "1xDz30zF3W3JxDpu",
+  "tags": []
+}
